@@ -1,106 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111111">
-  <title>Photo Storage</title>
-  <link rel="stylesheet" href="/style.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0b0f19"
+  >
+
+  <title>Public Storage</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 <body>
-  <main class="app">
-    <header>
-      <div class="brand">
-        <div class="logo">📸</div>
-        <div>
-          <h1>Photo Storage</h1>
-          <p>Upload a photo and see the shared gallery.</p>
-        </div>
+
+  <div class="container">
+
+    <!-- Header -->
+
+    <header class="header">
+
+      <div>
+        <h1>📦 Public Storage</h1>
+
+        <p>
+          Upload photos and videos
+          to shared storage.
+        </p>
       </div>
+
     </header>
 
-    <section class="card upload-card">
-      <h2>Upload Photos</h2>
-      <p class="muted">Anyone with this website can upload photos.</p>
 
-      <label class="picker" for="photoInput">
-        <span class="picker-icon">＋</span>
-        <strong>Choose Photos</strong>
-        <small>JPG, PNG, WEBP or GIF • Max 10 MB each</small>
+    <!-- Storage Card -->
+
+    <section class="storage-card">
+
+      <div class="storage-top">
+
+        <div>
+          <span class="label">
+            STORAGE
+          </span>
+
+          <h2 id="storageText">
+            Loading...
+          </h2>
+        </div>
+
+        <div class="storage-icon">
+          💾
+        </div>
+
+      </div>
+
+
+      <div class="progress">
+
+        <div
+          id="storageProgress"
+          class="progress-bar"
+        ></div>
+
+      </div>
+
+
+      <div class="storage-details">
+
+        <span id="usedText">
+          Used: -
+        </span>
+
+        <span id="freeText">
+          Free: -
+        </span>
+
+      </div>
+
+
+      <div class="file-count">
+
+        <span>
+          Files:
+        </span>
+
+        <strong id="fileCount">
+          0
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <!-- Upload Card -->
+
+    <section class="upload-card">
+
+      <h2>
+        Upload Photos & Videos
+      </h2>
+
+      <p class="description">
+        Anyone with access to this website
+        can upload media.
+      </p>
+
+
+      <label
+        class="file-picker"
+        for="fileInput"
+      >
+
+        <div class="upload-icon">
+          ⬆️
+        </div>
+
+        <strong>
+          Select Photos / Videos
+        </strong>
+
+        <small>
+          JPG, PNG, WEBP, GIF, MP4, WEBM,
+          MOV, MKV
+        </small>
+
+        <small>
+          No application file-size limit
+        </small>
+
       </label>
 
-      <input id="photoInput" type="file"
-             accept="image/jpeg,image/png,image/webp,image/gif"
-             multiple hidden>
 
-      <div id="selected" class="selected"></div>
+      <input
+        id="fileInput"
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        hidden
+      >
 
-      <button id="uploadBtn" class="primary" disabled>
-        Upload Photos
+
+      <!-- Selected files -->
+
+      <div
+        id="selectedFiles"
+        class="selected-files"
+      ></div>
+
+
+      <button
+        id="uploadBtn"
+        class="upload-btn"
+        disabled
+      >
+        Upload
       </button>
 
-      <div id="progressWrap" class="progress-wrap hidden">
-        <div class="progress"><div id="progressBar"></div></div>
-        <span id="progressText">Uploading…</span>
+
+      <!-- Upload progress -->
+
+      <div
+        id="uploadProgressContainer"
+        class="upload-progress-container"
+        hidden
+      >
+
+        <div
+          class="upload-progress"
+        >
+
+          <div
+            id="uploadProgressBar"
+            class="upload-progress-bar"
+          ></div>
+
+        </div>
+
+        <p id="uploadProgressText">
+          Uploading...
+        </p>
+
       </div>
 
-      <p id="message" class="message"></p>
+
+      <p
+        id="message"
+        class="message"
+      ></p>
+
     </section>
 
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <h2>Storage Status</h2>
-          <p class="muted">Live information from the storage device.</p>
-        </div>
-        <span id="statusDot" class="status-dot"></span>
-      </div>
 
-      <div class="stats">
-        <div class="stat">
-          <span>Total</span>
-          <strong id="total">—</strong>
-        </div>
-        <div class="stat">
-          <span>Used</span>
-          <strong id="used">—</strong>
-        </div>
-        <div class="stat">
-          <span>Free</span>
-          <strong id="free">—</strong>
-        </div>
-        <div class="stat">
-          <span>Photos</span>
-          <strong id="count">—</strong>
-        </div>
-      </div>
-
-      <div class="storage-bar">
-        <div id="storageFill"></div>
-      </div>
-      <p id="storagePercent" class="storage-percent">Checking storage…</p>
-    </section>
+    <!-- Gallery -->
 
     <section class="gallery-section">
-      <div class="section-title">
+
+      <div class="gallery-header">
+
         <div>
-          <h2>Gallery</h2>
-          <p class="muted">Newest photos appear first.</p>
+
+          <h2>
+            Shared Gallery
+          </h2>
+
+          <p>
+            Photos and videos uploaded
+            by everyone.
+          </p>
+
         </div>
-        <button id="refreshBtn" class="small-btn">↻ Refresh</button>
+
+
+        <button
+          id="refreshBtn"
+          class="refresh-btn"
+        >
+          🔄
+        </button>
+
       </div>
 
-      <div id="gallery" class="gallery">
-        <div class="empty">Loading gallery…</div>
+
+      <div
+        id="gallery"
+        class="gallery"
+      >
+
+        <div class="loading">
+          Loading gallery...
+        </div>
+
       </div>
+
     </section>
-  </main>
 
-  <div id="lightbox" class="lightbox hidden">
-    <button id="closeLightbox" class="close">×</button>
-    <img id="lightboxImg" alt="Full-size photo">
   </div>
 
-  <script src="/app.js"></script>
+
+  <!-- Lightbox -->
+
+  <div
+    id="lightbox"
+    class="lightbox"
+    hidden
+  >
+
+    <button
+      id="closeLightbox"
+      class="close-lightbox"
+    >
+      ✕
+    </button>
+
+    <div
+      id="lightboxContent"
+      class="lightbox-content"
+    ></div>
+
+  </div>
+
+
+  <script src="app.js"></script>
+
 </body>
+
 </html>
