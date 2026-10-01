@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <title>Photo Storage</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">📸</div>
+        <div>
+          <h1>Photo Storage</h1>
+          <p>Upload a photo and see the shared gallery.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="card upload-card">
+      <h2>Upload Photos</h2>
+      <p class="muted">Anyone with this website can upload photos.</p>
+
+      <label class="picker" for="photoInput">
+        <span class="picker-icon">＋</span>
+        <strong>Choose Photos</strong>
+        <small>JPG, PNG, WEBP or GIF • Max 10 MB each</small>
+      </label>
+
+      <input id="photoInput" type="file"
+             accept="image/jpeg,image/png,image/webp,image/gif"
+             multiple hidden>
+
+      <div id="selected" class="selected"></div>
+
+      <button id="uploadBtn" class="primary" disabled>
+        Upload Photos
+      </button>
+
+      <div id="progressWrap" class="progress-wrap hidden">
+        <div class="progress"><div id="progressBar"></div></div>
+        <span id="progressText">Uploading…</span>
+      </div>
+
+      <p id="message" class="message"></p>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Storage Status</h2>
+          <p class="muted">Live information from the storage device.</p>
+        </div>
+        <span id="statusDot" class="status-dot"></span>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span>Total</span>
+          <strong id="total">—</strong>
+        </div>
+        <div class="stat">
+          <span>Used</span>
+          <strong id="used">—</strong>
+        </div>
+        <div class="stat">
+          <span>Free</span>
+          <strong id="free">—</strong>
+        </div>
+        <div class="stat">
+          <span>Photos</span>
+          <strong id="count">—</strong>
+        </div>
+      </div>
+
+      <div class="storage-bar">
+        <div id="storageFill"></div>
+      </div>
+      <p id="storagePercent" class="storage-percent">Checking storage…</p>
+    </section>
+
+    <section class="gallery-section">
+      <div class="section-title">
+        <div>
+          <h2>Gallery</h2>
+          <p class="muted">Newest photos appear first.</p>
+        </div>
+        <button id="refreshBtn" class="small-btn">↻ Refresh</button>
+      </div>
+
+      <div id="gallery" class="gallery">
+        <div class="empty">Loading gallery…</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="lightbox" class="lightbox hidden">
+    <button id="closeLightbox" class="close">×</button>
+    <img id="lightboxImg" alt="Full-size photo">
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
