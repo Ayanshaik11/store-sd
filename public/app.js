@@ -1,238 +1,918 @@
-const input = document.getElementById("photoInput");
-const uploadBtn = document.getElementById("uploadBtn");
-const selected = document.getElementById("selected");
-const message = document.getElementById("message");
-const gallery = document.getElementById("gallery");
-const refreshBtn = document.getElementById("refreshBtn");
+const fileInput =
+  document.getElementById("fileInput");
 
-const progressWrap = document.getElementById("progressWrap");
-const progressBar = document.getElementById("progressBar");
-const progressText = document.getElementById("progressText");
+const uploadBtn =
+  document.getElementById("uploadBtn");
 
-const totalEl = document.getElementById("total");
-const usedEl = document.getElementById("used");
-const freeEl = document.getElementById("free");
-const countEl = document.getElementById("count");
-const storageFill = document.getElementById("storageFill");
-const storagePercent = document.getElementById("storagePercent");
-const statusDot = document.getElementById("statusDot");
+const selectedFilesContainer =
+  document.getElementById(
+    "selectedFiles"
+  );
 
-const lightbox = document.getElementById("lightbox");
-const lightboxImg = document.getElementById("lightboxImg");
-const closeLightbox = document.getElementById("closeLightbox");
+const message =
+  document.getElementById("message");
+
+const gallery =
+  document.getElementById("gallery");
+
+const refreshBtn =
+  document.getElementById(
+    "refreshBtn"
+  );
+
+const storageText =
+  document.getElementById(
+    "storageText"
+  );
+
+const storageProgress =
+  document.getElementById(
+    "storageProgress"
+  );
+
+const usedText =
+  document.getElementById(
+    "usedText"
+  );
+
+const freeText =
+  document.getElementById(
+    "freeText"
+  );
+
+const fileCount =
+  document.getElementById(
+    "fileCount"
+  );
+
+const uploadProgressContainer =
+  document.getElementById(
+    "uploadProgressContainer"
+  );
+
+const uploadProgressBar =
+  document.getElementById(
+    "uploadProgressBar"
+  );
+
+const uploadProgressText =
+  document.getElementById(
+    "uploadProgressText"
+  );
+
+const lightbox =
+  document.getElementById(
+    "lightbox"
+  );
+
+const lightboxContent =
+  document.getElementById(
+    "lightboxContent"
+  );
+
+const closeLightbox =
+  document.getElementById(
+    "closeLightbox"
+  );
+
 
 let selectedFiles = [];
 
+
+// --------------------------------------------------
+// Helpers
+// --------------------------------------------------
+
 function formatBytes(bytes) {
-  if (bytes === null || bytes === undefined) return "—";
-  if (bytes < 1024) return bytes + " B";
 
-  const units = ["KB", "MB", "GB", "TB"];
-  let value = bytes / 1024;
-  let unit = 0;
-
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
+  if (
+    bytes === null ||
+    bytes === undefined ||
+    Number.isNaN(bytes)
+  ) {
+    return "-";
   }
 
-  return value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2) + " " + units[unit];
+  if (bytes === 0) {
+    return "0 B";
+  }
+
+  const units = [
+    "B",
+    "KB",
+    "MB",
+    "GB",
+    "TB"
+  ];
+
+  const index = Math.floor(
+    Math.log(bytes) /
+      Math.log(1024)
+  );
+
+  const safeIndex = Math.min(
+    index,
+    units.length - 1
+  );
+
+  const value =
+    bytes /
+    Math.pow(
+      1024,
+      safeIndex
+    );
+
+  return (
+    value.toFixed(
+      value >= 10 ? 0 : 1
+    ) +
+    " " +
+    units[safeIndex]
+  );
 }
 
-function setMessage(text, type = "") {
+
+function showMessage(
+  text,
+  type = ""
+) {
+
   message.textContent = text;
-  message.className = "message " + type;
+
+  message.className =
+    "message " + type;
 }
 
-function renderSelected() {
-  selected.innerHTML = "";
 
-  selectedFiles.forEach((file) => {
-    const item = document.createElement("span");
-    item.textContent = `${file.name} (${formatBytes(file.size)})`;
-    selected.appendChild(item);
-  });
+// --------------------------------------------------
+// File selection
+// --------------------------------------------------
 
-  uploadBtn.disabled = selectedFiles.length === 0;
-}
+fileInput.addEventListener(
+  "change",
+  () => {
 
-input.addEventListener("change", () => {
-  selectedFiles = Array.from(input.files || []);
+    const files = Array.from(
+      fileInput.files
+    );
 
-  const valid = selectedFiles.filter((file) => {
-    const okType = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "image/gif"
-    ].includes(file.type);
+    selectedFiles =
+      files.filter((file) => {
 
-    const okSize = file.size <= 10 * 1024 * 1024;
+        return (
+          file.type.startsWith(
+            "image/"
+          ) ||
+          file.type.startsWith(
+            "video/"
+          )
+        );
 
-    return okType && okSize;
-  });
+      });
 
-  if (valid.length !== selectedFiles.length) {
-    setMessage("Some files were removed. Only supported images up to 10 MB are allowed.", "error");
-  } else {
-    setMessage("");
-  }
 
-  selectedFiles = valid.slice(0, 10);
-  renderSelected();
-});
+    if (
+      selectedFiles.length !==
+      files.length
+    ) {
 
-function uploadFiles() {
-  if (!selectedFiles.length) return;
+      showMessage(
+        "Some files were ignored because they are not photos or videos.",
+        "error"
+      );
 
-  const formData = new FormData();
+    } else {
 
-  selectedFiles.forEach((file) => {
-    formData.append("photos", file);
-  });
+      showMessage("");
 
-  uploadBtn.disabled = true;
-  progressWrap.classList.remove("hidden");
-  progressBar.style.width = "0%";
-  progressText.textContent = "Uploading…";
-  setMessage("");
-
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "/api/upload");
-
-  xhr.upload.onprogress = (event) => {
-    if (!event.lengthComputable) return;
-    const percent = Math.round((event.loaded / event.total) * 100);
-    progressBar.style.width = percent + "%";
-    progressText.textContent = `Uploading… ${percent}%`;
-  };
-
-  xhr.onload = async () => {
-    try {
-      const data = JSON.parse(xhr.responseText);
-
-      if (xhr.status >= 200 && xhr.status < 300) {
-        setMessage(data.message || "Upload complete.", "ok");
-        selectedFiles = [];
-        input.value = "";
-        renderSelected();
-        await Promise.all([loadGallery(), loadStorage()]);
-      } else {
-        setMessage(data.error || "Upload failed.", "error");
-      }
-    } catch {
-      setMessage("Upload failed.", "error");
     }
 
-    progressWrap.classList.add("hidden");
-    uploadBtn.disabled = selectedFiles.length === 0;
-  };
 
-  xhr.onerror = () => {
-    progressWrap.classList.add("hidden");
-    uploadBtn.disabled = false;
-    setMessage("Network error. Check the server connection.", "error");
-  };
+    renderSelectedFiles();
+
+    uploadBtn.disabled =
+      selectedFiles.length === 0;
+  }
+);
+
+
+// --------------------------------------------------
+// Selected files preview
+// --------------------------------------------------
+
+function renderSelectedFiles() {
+
+  selectedFilesContainer.innerHTML =
+    "";
+
+
+  if (
+    selectedFiles.length === 0
+  ) {
+
+    return;
+  }
+
+
+  selectedFiles.forEach(
+    (file, index) => {
+
+      const item =
+        document.createElement(
+          "div"
+        );
+
+      item.className =
+        "selected-file";
+
+
+      const name =
+        document.createElement(
+          "span"
+        );
+
+      name.textContent =
+        file.name;
+
+
+      const size =
+        document.createElement(
+          "small"
+        );
+
+      size.textContent =
+        formatBytes(
+          file.size
+        );
+
+
+      const remove =
+        document.createElement(
+          "button"
+        );
+
+      remove.textContent =
+        "✕";
+
+      remove.type =
+        "button";
+
+      remove.addEventListener(
+        "click",
+        () => {
+
+          selectedFiles.splice(
+            index,
+            1
+          );
+
+          renderSelectedFiles();
+
+          uploadBtn.disabled =
+            selectedFiles.length ===
+            0;
+
+        }
+      );
+
+
+      item.appendChild(name);
+
+      item.appendChild(size);
+
+      item.appendChild(remove);
+
+      selectedFilesContainer.appendChild(
+        item
+      );
+
+    }
+  );
+}
+
+
+// --------------------------------------------------
+// Upload
+// --------------------------------------------------
+
+uploadBtn.addEventListener(
+  "click",
+  uploadFiles
+);
+
+
+function uploadFiles() {
+
+  if (
+    selectedFiles.length === 0
+  ) {
+
+    return;
+  }
+
+
+  if (
+    selectedFiles.length > 10
+  ) {
+
+    showMessage(
+      "Maximum 10 files per upload.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const formData =
+    new FormData();
+
+
+  selectedFiles.forEach(
+    (file) => {
+
+      formData.append(
+        "files",
+        file
+      );
+
+    }
+  );
+
+
+  uploadBtn.disabled =
+    true;
+
+  uploadProgressContainer.hidden =
+    false;
+
+  uploadProgressBar.style.width =
+    "0%";
+
+  uploadProgressText.textContent =
+    "Uploading...";
+
+
+  const xhr =
+    new XMLHttpRequest();
+
+
+  xhr.open(
+    "POST",
+    "/api/upload"
+  );
+
+
+  // Upload progress
+  xhr.upload.addEventListener(
+    "progress",
+    (event) => {
+
+      if (!event.lengthComputable) {
+        return;
+      }
+
+      const percent =
+        Math.round(
+          (event.loaded /
+            event.total) *
+            100
+        );
+
+      uploadProgressBar.style.width =
+        percent + "%";
+
+      uploadProgressText.textContent =
+        `Uploading... ${percent}%`;
+
+    }
+  );
+
+
+  xhr.addEventListener(
+    "load",
+    () => {
+
+      let data = {};
+
+      try {
+
+        data =
+          JSON.parse(
+            xhr.responseText
+          );
+
+      } catch (error) {
+
+        data = {};
+
+      }
+
+
+      if (
+        xhr.status >= 200 &&
+        xhr.status < 300
+      ) {
+
+        showMessage(
+          data.message ||
+            "Upload successful!",
+          "success"
+        );
+
+
+        selectedFiles = [];
+
+        fileInput.value = "";
+
+        renderSelectedFiles();
+
+
+        uploadProgressBar.style.width =
+          "100%";
+
+        uploadProgressText.textContent =
+          "Upload complete!";
+
+
+        loadGallery();
+
+        loadStorage();
+
+
+        setTimeout(
+          () => {
+
+            uploadProgressContainer.hidden =
+              true;
+
+          },
+          1500
+        );
+
+      } else {
+
+        showMessage(
+          data.error ||
+            "Upload failed.",
+          "error"
+        );
+
+        uploadProgressContainer.hidden =
+          true;
+
+      }
+
+
+      uploadBtn.disabled =
+        selectedFiles.length === 0;
+
+    }
+  );
+
+
+  xhr.addEventListener(
+    "error",
+    () => {
+
+      showMessage(
+        "Network error. Upload failed.",
+        "error"
+      );
+
+      uploadProgressContainer.hidden =
+        true;
+
+      uploadBtn.disabled =
+        selectedFiles.length === 0;
+
+    }
+  );
+
+
+  xhr.addEventListener(
+    "abort",
+    () => {
+
+      showMessage(
+        "Upload cancelled.",
+        "error"
+      );
+
+      uploadProgressContainer.hidden =
+        true;
+
+      uploadBtn.disabled =
+        selectedFiles.length === 0;
+
+    }
+  );
+
 
   xhr.send(formData);
 }
 
-uploadBtn.addEventListener("click", uploadFiles);
 
-async function loadGallery() {
-  try {
-    const response = await fetch("/api/photos", { cache: "no-store" });
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error || "Gallery error");
-
-    gallery.innerHTML = "";
-
-    if (!data.photos.length) {
-      gallery.innerHTML = '<div class="empty">No photos yet. Be the first to upload one.</div>';
-      return;
-    }
-
-    data.photos.forEach((photo) => {
-      const box = document.createElement("div");
-      box.className = "photo";
-
-      const img = document.createElement("img");
-      img.loading = "lazy";
-      img.src = photo.url;
-      img.alt = "Uploaded photo";
-      img.addEventListener("click", () => openLightbox(photo.url));
-
-      box.appendChild(img);
-      gallery.appendChild(box);
-    });
-  } catch (error) {
-    gallery.innerHTML = '<div class="empty">Could not load the gallery.</div>';
-  }
-}
+// --------------------------------------------------
+// Storage
+// --------------------------------------------------
 
 async function loadStorage() {
+
   try {
-    const response = await fetch("/api/storage", { cache: "no-store" });
-    const data = await response.json();
 
-    if (!response.ok) throw new Error();
+    const response =
+      await fetch(
+        "/api/storage"
+      );
 
-    countEl.textContent = data.photoCount;
 
-    // The server reports actual filesystem capacity.
-    if (data.diskTotalBytes !== null) {
-      totalEl.textContent = formatBytes(data.diskTotalBytes);
-      freeEl.textContent = formatBytes(data.diskFreeBytes);
-      usedEl.textContent = formatBytes(data.diskUsedBytes);
-
-      const usedPercent =
-        data.diskTotalBytes > 0
-          ? (data.diskUsedBytes / data.diskTotalBytes) * 100
-          : 0;
-
-      const safePercent = Math.min(100, Math.max(0, usedPercent));
-      storageFill.style.width = safePercent.toFixed(2) + "%";
-      storagePercent.textContent = `${safePercent.toFixed(1)}% of the storage is used`;
-    } else {
-      totalEl.textContent = "—";
-      freeEl.textContent = "—";
-      usedEl.textContent = formatBytes(data.photoBytes);
-      storageFill.style.width = "0%";
-      storagePercent.textContent =
-        "Filesystem capacity is unavailable on this Node.js version.";
+    if (!response.ok) {
+      throw new Error(
+        "Storage request failed"
+      );
     }
 
-    statusDot.classList.add("online");
-  } catch {
-    statusDot.classList.remove("online");
+
+    const data =
+      await response.json();
+
+
+    usedText.textContent =
+      "Used: " +
+      formatBytes(
+        data.usedBytes
+      );
+
+
+    freeText.textContent =
+      "Free: " +
+      formatBytes(
+        data.freeBytes
+      );
+
+
+    fileCount.textContent =
+      data.fileCount;
+
+
+    if (
+      data.totalBytes !== null &&
+      data.freeBytes !== null
+    ) {
+
+      const usedPercent =
+        (
+          data.usedBytes /
+          data.totalBytes
+        ) *
+        100;
+
+
+      storageText.textContent =
+        `${usedPercent.toFixed(1)}% used`;
+
+
+      storageProgress.style.width =
+        Math.min(
+          usedPercent,
+          100
+        ) + "%";
+
+    } else {
+
+      storageText.textContent =
+        "Storage available";
+
+      storageProgress.style.width =
+        "0%";
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    storageText.textContent =
+      "Unavailable";
+
   }
 }
 
-function openLightbox(url) {
-  lightboxImg.src = url;
-  lightbox.classList.remove("hidden");
+
+// --------------------------------------------------
+// Gallery
+// --------------------------------------------------
+
+async function loadGallery() {
+
+  gallery.innerHTML =
+    `<div class="loading">
+      Loading gallery...
+    </div>`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/files"
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Gallery request failed"
+      );
+
+    }
+
+
+    const data =
+      await response.json();
+
+
+    renderGallery(
+      data.files || []
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    gallery.innerHTML =
+      `<div class="empty">
+        Could not load gallery.
+      </div>`;
+
+  }
 }
 
-function closeViewer() {
-  lightbox.classList.add("hidden");
-  lightboxImg.src = "";
+
+// --------------------------------------------------
+// Render gallery
+// --------------------------------------------------
+
+function renderGallery(
+  files
+) {
+
+  gallery.innerHTML =
+    "";
+
+
+  if (
+    files.length === 0
+  ) {
+
+    gallery.innerHTML =
+      `<div class="empty">
+        No photos or videos uploaded yet.
+      </div>`;
+
+    return;
+  }
+
+
+  files.forEach(
+    (file) => {
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        "photo";
+
+
+      // VIDEO
+      if (
+        file.type === "video"
+      ) {
+
+        const video =
+          document.createElement(
+            "video"
+          );
+
+
+        video.src =
+          file.url;
+
+        video.controls =
+          true;
+
+        video.preload =
+          "metadata";
+
+        video.playsInline =
+          true;
+
+
+        card.appendChild(
+          video
+        );
+
+      }
+
+
+      // IMAGE
+      else {
+
+        const img =
+          document.createElement(
+            "img"
+          );
+
+
+        img.src =
+          file.url;
+
+        img.alt =
+          "Uploaded photo";
+
+        img.loading =
+          "lazy";
+
+
+        img.addEventListener(
+          "click",
+          () => {
+
+            openLightbox(
+              file.url
+            );
+
+          }
+        );
+
+
+        card.appendChild(
+          img
+        );
+
+      }
+
+
+      // File information
+
+      const info =
+        document.createElement(
+          "div"
+        );
+
+      info.className =
+        "photo-info";
+
+
+      const type =
+        document.createElement(
+          "span"
+        );
+
+      type.textContent =
+        file.type === "video"
+          ? "🎬 Video"
+          : "🖼️ Photo";
+
+
+      const size =
+        document.createElement(
+          "span"
+        );
+
+      size.textContent =
+        formatBytes(
+          file.size
+        );
+
+
+      info.appendChild(
+        type
+      );
+
+      info.appendChild(
+        size
+      );
+
+
+      card.appendChild(
+        info
+      );
+
+
+      gallery.appendChild(
+        card
+      );
+
+    }
+  );
 }
 
-closeLightbox.addEventListener("click", closeViewer);
-lightbox.addEventListener("click", (event) => {
-  if (event.target === lightbox) closeViewer();
-});
 
-refreshBtn.addEventListener("click", async () => {
-  refreshBtn.disabled = true;
-  await Promise.all([loadGallery(), loadStorage()]);
-  refreshBtn.disabled = false;
-});
+// --------------------------------------------------
+// Lightbox
+// --------------------------------------------------
+
+function openLightbox(
+  url
+) {
+
+  lightboxContent.innerHTML =
+    "";
+
+
+  const img =
+    document.createElement(
+      "img"
+    );
+
+
+  img.src =
+    url;
+
+  img.alt =
+    "Full size image";
+
+
+  lightboxContent.appendChild(
+    img
+  );
+
+
+  lightbox.hidden =
+    false;
+
+  document.body.style.overflow =
+    "hidden";
+}
+
+
+function closeLightboxWindow() {
+
+  lightbox.hidden =
+    true;
+
+  lightboxContent.innerHTML =
+    "";
+
+  document.body.style.overflow =
+    "";
+}
+
+
+closeLightbox.addEventListener(
+  "click",
+  closeLightboxWindow
+);
+
+
+lightbox.addEventListener(
+  "click",
+  (event) => {
+
+    if (
+      event.target ===
+      lightbox
+    ) {
+
+      closeLightboxWindow();
+
+    }
+
+  }
+);
+
+
+// --------------------------------------------------
+// Refresh
+// --------------------------------------------------
+
+refreshBtn.addEventListener(
+  "click",
+  () => {
+
+    loadGallery();
+
+    loadStorage();
+
+  }
+);
+
+
+// --------------------------------------------------
+// Initial load
+// --------------------------------------------------
 
 loadGallery();
+
 loadStorage();
 
-// Keep storage and gallery information reasonably fresh.
-setInterval(loadStorage, 5000);
-setInterval(loadGallery, 15000);
+
+// Refresh storage periodically
+setInterval(
+  loadStorage,
+  10000
+);
